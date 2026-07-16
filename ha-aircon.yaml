@@ -1,0 +1,194 @@
+# 核心空调控制逻辑
+# - 将关闭空调设置为先调整为送风，10min 后再真正关闭，防止发霉
+# - 将启动空调默认为制冷（夏天有地暖，一般不用）
+# - 将睡眠模式映射为 1 档风速
+
+alias: 空调控制
+triggers:
+  - trigger: mqtt
+    id: keting
+    options:
+      topic: <OMIT>
+  - trigger: mqtt
+    id: ciwo
+    options:
+      topic: <OMIT>
+  - trigger: mqtt
+    id: zhuwo
+    options:
+      topic: <OMIT>
+  - trigger: mqtt
+    id: shufang
+    options:
+      topic: <OMIT>
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ has_on and is_on == false }}"
+        sequence:
+          - action: climate.set_hvac_mode
+            target:
+              entity_id: "{{ aircon_entity }}"
+            data:
+              hvac_mode: fan_only
+          - action: timer.start
+            target:
+              entity_id: "{{ off_timer }}"
+            data:
+              duration: "00:10:00"
+      - conditions:
+          - condition: template
+            value_template: "{{ has_on and is_on == true }}"
+        sequence:
+          - action: timer.cancel
+            target:
+              entity_id: "{{ off_timer }}"
+          - action: climate.set_hvac_mode
+            target:
+              entity_id: "{{ aircon_entity }}"
+            data:
+              hvac_mode: cool
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_mode and mode_id == 2 }}"
+                sequence:
+                  - action: climate.set_hvac_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      hvac_mode: cool
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_mode and mode_id == 4 }}"
+                sequence:
+                  - action: climate.set_hvac_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      hvac_mode: fan_only
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_mode and mode_id == 5 }}"
+                sequence:
+                  - action: climate.set_hvac_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      hvac_mode: dry
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_mode and mode_id == 6 }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: mute
+          - if:
+              - condition: template
+                value_template: "{{ has_temp and temperature >= 16 and temperature <= 30 }}"
+            then:
+              - action: climate.set_temperature
+                target:
+                  entity_id: "{{ aircon_entity }}"
+                data:
+                  temperature: "{{ temperature }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id == 0 }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: auto
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id == 1 }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: "1"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id == 2 }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: "2"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id == 3 }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: "3"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id == 4 }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: "4"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id in [5, 9] }}"
+                sequence:
+                  - action: climate.set_fan_mode
+                    target:
+                      entity_id: "{{ aircon_entity }}"
+                    data:
+                      fan_mode: "5"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ has_fan and fan_id not in [0, 1, 2, 3, 4, 5, 9] }}"
+                sequence:
+                  - action: system_log.write
+                    data:
+                      level: warning
+                      message: >-
+                        bafa {{ room_name }} unknown fan value: {{ fan_id }},
+                        payload={{ trigger.payload }}
+mode: parallel
+max: 10
+variables:
+  aircon_entities:
+    keting: climate.keting_aircon
+    ciwo: climate.ciwo_aircon
+    zhuwo: climate.zhuwo_aircon
+    shufang: climate.shufang_aircon
+  off_timers:
+    keting: timer.aircon_off_keting
+    ciwo: timer.aircon_off_ciwo
+    zhuwo: timer.aircon_off_zhuwo
+    shufang: timer.aircon_off_shufang
+  room_names:
+    keting: 客厅
+    ciwo: 次卧
+    zhuwo: 主卧
+    shufang: 书房
+  aircon_entity: "{{ aircon_entities[trigger.id] }}"
+  off_timer: "{{ off_timers[trigger.id] }}"
+  room_name: "{{ room_names[trigger.id] }}"
+  payload: "{{ trigger.payload | from_json }}"
+  has_on: "{{ 'on' in payload }}"
+  has_mode: "{{ 'mode' in payload }}"
+  has_temp: "{{ 't' in payload }}"
+  has_fan: "{{ 'fan' in payload }}"
+  is_on: "{{ payload.get('on') }}"
+  mode_id: "{{ payload.get('mode') | int(0) }}"
+  temperature: "{{ payload.get('t') | int(0) }}"
+  fan_id: "{{ payload.get('fan') | int(-1) }}"
+

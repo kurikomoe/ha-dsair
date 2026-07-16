@@ -1,0 +1,39 @@
+# 空调延迟关机定时器
+# - 配合 10min 送风后自动关机命令
+
+alias: 巴法云空调延迟关机
+triggers:
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.aircon_off_keting
+    id: keting
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.aircon_off_ciwo
+    id: ciwo
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.aircon_off_zhuwo
+    id: zhuwo
+  - trigger: event
+    event_type: timer.finished
+    event_data:
+      entity_id: timer.aircon_off_shufang
+    id: shufang
+actions:
+  - action: climate.turn_off
+    target:
+      entity_id: "{{ aircon_entity }}"
+mode: parallel
+max: 10
+variables:
+  aircon_entities:
+    keting: climate.keting_aircon
+    ciwo: climate.ciwo_aircon
+    zhuwo: climate.zhuwo_aircon
+    shufang: climate.shufang_aircon
+  aircon_entity: "{{ aircon_entities[trigger.id] }}"
+
