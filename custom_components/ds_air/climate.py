@@ -385,6 +385,22 @@ class DsAir(ClimateEntity):
             self.service.control(self._device_info, new_status)
         self.schedule_update_ha_state()
 
+    def turn_on(self, **kwargs) -> None:
+        """Turn on the air conditioner without changing its current settings."""
+        status = self._device_info.status
+        status.switch = EnumControl.Switch.ON
+        new_status = AirConStatus(switch=EnumControl.Switch.ON)
+        self.service.control(self._device_info, new_status)
+        self.schedule_update_ha_state()
+
+    def turn_off(self, **kwargs) -> None:
+        """Turn off the air conditioner without changing its current settings."""
+        status = self._device_info.status
+        status.switch = EnumControl.Switch.OFF
+        new_status = AirConStatus(switch=EnumControl.Switch.OFF)
+        self.service.control(self._device_info, new_status)
+        self.schedule_update_ha_state()
+
     def set_swing_mode(self, swing_mode: str) -> None:
         """Set new swing mode."""
         status = self._device_info.status

@@ -240,6 +240,7 @@ class EnumControl:
 
     class AirFlow(IntEnum):
         SUPER_WEAK = 0
+        MUTE = 0
         WEAK = 1
         MIDDLE = 2
         STRONG = 3

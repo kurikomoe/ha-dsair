@@ -72,15 +72,47 @@ def get_action_name(idx: EnumControl.Mode | None) -> HVACAction | None:
     return _MODE_ACTION_LIST[idx] if idx is not None else None
 
 
-AIR_FLOW_NAME_LIST = [FAN_LOW, "稍弱", FAN_MEDIUM, "稍强", FAN_HIGH, FAN_AUTO]
+AIR_FLOW_NAME_LIST = ["1", "2", "3", "4", "5", FAN_AUTO]
+
+_AIR_FLOW_NAME_BY_ENUM = {
+    EnumControl.AirFlow.SUPER_WEAK: "1",
+    EnumControl.AirFlow.WEAK: "2",
+    EnumControl.AirFlow.MIDDLE: "3",
+    EnumControl.AirFlow.STRONG: "4",
+    EnumControl.AirFlow.SUPER_STRONG: "5",
+    EnumControl.AirFlow.AUTO: FAN_AUTO,
+}
+
+_AIR_FLOW_NAME_BY_VALUE = {
+    0: "1",
+    1: "2",
+    2: "3",
+    3: "4",
+    4: "5",
+    5: FAN_AUTO,
+}
+
+_AIR_FLOW_ENUM_BY_NAME = {
+    "1": EnumControl.AirFlow.SUPER_WEAK,
+    FAN_LOW: EnumControl.AirFlow.SUPER_WEAK,
+    "2": EnumControl.AirFlow.WEAK,
+    "稍弱": EnumControl.AirFlow.WEAK,
+    "3": EnumControl.AirFlow.MIDDLE,
+    FAN_MEDIUM: EnumControl.AirFlow.MIDDLE,
+    "4": EnumControl.AirFlow.STRONG,
+    "稍强": EnumControl.AirFlow.STRONG,
+    "5": EnumControl.AirFlow.SUPER_STRONG,
+    FAN_HIGH: EnumControl.AirFlow.SUPER_STRONG,
+    FAN_AUTO: EnumControl.AirFlow.AUTO,
+}
 
 
 def get_air_flow_name(idx: EnumControl.AirFlow | None) -> str | None:
-    return AIR_FLOW_NAME_LIST[idx] if idx is not None else None
+    return _AIR_FLOW_NAME_BY_VALUE.get(int(idx)) if idx is not None else None
 
 
 def get_air_flow_enum(name: str) -> EnumControl.AirFlow:
-    return EnumControl.AirFlow(AIR_FLOW_NAME_LIST.index(name))
+    return _AIR_FLOW_ENUM_BY_NAME[name]
 
 
 FAN_DIRECTION_LIST = [None, "➡️", "↘️", "⬇️", "↙️", "⬅️", "↔️", "🔄"]

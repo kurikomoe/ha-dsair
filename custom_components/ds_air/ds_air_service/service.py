@@ -444,9 +444,9 @@ class Service:
                         _log(str(e))
 
     def poll_status(self):
-        for i in self._new_aircons:
+        for i in self.get_aircons():
             p = AirConQueryStatusParam()
-            p.target = EnumDevice.NEWAIRCON
+            p.target = get_device_by_aircon(i)
             p.device = i
             self.send_msg(p)
         if self._ventilations is not None:
